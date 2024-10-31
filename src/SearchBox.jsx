@@ -3,62 +3,56 @@ import Button from '@mui/material/Button';
 import "./SearchBox.css";
 import { useState } from 'react';
 
-export default function SearchBox(updateInfo) {
-    const [city, setCity] = useState("");
+export default function SearchBox({ updateInfo }) {
+    let [city, setCity] = useState("");
+    let [error, setError] = useState(false);
+    const API_URL = "https://api.openweathermap.org/data/2.5/weather";
     const API_KEY = "6ef0f2f0d4705214fee64f6cf6db368a";
-    const GEO_API_URL = "http://api.openweathermap.org/geo/1.0/direct";
-    const WEATHER_API_URL = "https://api.openweathermap.org/data/2.5/weather";
-    const limit = 1;
 
-    const getWeatherInfo = async () => {
+    let getWeatherInfo = async () => {
         try {
-            const geoResponse = await fetch(`${GEO_API_URL}?q=${city}&limit=${limit}&appid=${API_KEY}`);
-            const geoData = await geoResponse.json();
-
-            if (geoData.length > 0) {
-                const { lat, lon } = geoData[0];
-
-                const weatherResponse = await fetch(`${WEATHER_API_URL}?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`);
-                const weatherData = await weatherResponse.json();
-
-                return {
-                    city,
-                    temp: weatherData.main.temp,
-                    tempMin: weatherData.main.temp_min,
-                    tempMax: weatherData.main.temp_max,
-                    humidity: weatherData.main.humidity,
-                    feelsLike: weatherData.main.feels_like,
-                    weather: weatherData.weather[0].description,
-                };
-            } else {
-                console.log("City not found");
-                return null;
-            }
-        } catch (error) {
-            console.error("Error fetching weather data:", error);
-            return null;
+            let response = await fetch(`${API_URL}?q=${city}&appid=${API_KEY}&units=metric`);
+            let jsonResponse = await response.json();
+            let result = {
+                city: city,
+                temp: jsonResponse.main.temp,
+                tempMin: jsonResponse.main.temp_min,
+                tempMax: jsonResponse.main.temp_max,
+                humidity: jsonResponse.main.humidity,
+                feelsLike: jsonResponse.main.feels_like,
+                weather: jsonResponse.weather[0].description,
+            };
+            console.log(result);
+            return result;
+        } catch (err) {
+            throw err;
         }
     };
 
-    const handleChange = (evt) => {
+    let handleChange = (evt) => {
         setCity(evt.target.value);
     };
 
-    const handleSubmit = async (evt) => {
+    let handleSubmit = async (evt) => {
+        try{
         evt.preventDefault();
-        const newInfo = await getWeatherInfo();
-        if (newInfo) {
-            updateInfo(newInfo);
-        }
+        console.log(city);
         setCity("");
+        let newInfo = await getWeatherInfo();
+        updateInfo(newInfo);
+        } catch(err) {
+            setError(true);
+        }
     };
 
     return (
-        <div className='SearchBox'>
+        <div className="SearchBox">
             <form onSubmit={handleSubmit}>
                 <TextField id="city" label="City Name" variant="outlined" required value={city} onChange={handleChange} />
-                <br /><br />
-                <Button variant="contained" type='submit'>Search</Button>
+                <br></br>
+                <br></br>
+                <Button variant="contained" type="submit">Search</Button>
+                {error && <p style={{color: "red"}}>Sorry! No such place in our API</p>}
             </form>
         </div>
     );
